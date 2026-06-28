@@ -190,11 +190,12 @@ if not active_df.empty:
             hoverinfo='text', text=f"Leg 2: Ocean Freight from {o_name}<br>Consolidated Orders: {volume}", showlegend=False
         ))
 
+    # 3. DRAW THE NODES 
     plant_colors = ['#e74c3c' if (p == struck_plant and "Strike" in scenario) else '#3498db' for p in plants]
     fig.add_trace(go.Scatter(
         x=[node_coords[p]["x"] for p in plants], y=[node_coords[p]["y"] for p in plants],
         mode='markers+text', marker=dict(symbol='square', size=25, color=plant_colors, line=dict(width=2, color='white')),
-        text=plants, textposition="middle left", hoverinfo='text', name="Plants",
+        text=plants, textposition="middle right", hoverinfo='text', name="Plants", 
         customdata=plants 
     ))
     
@@ -210,7 +211,9 @@ if not active_df.empty:
     fig.add_trace(go.Scatter(
         x=[node_coords[DEST_PORT]["x"]], y=[node_coords[DEST_PORT]["y"]],
         mode='markers+text', marker=dict(symbol='hexagram', size=45, color='#9b59b6', line=dict(width=3, color='white')),
-        text=[DEST_PORT], textposition="middle right", hoverinfo='text', name="Destination",
+        text=[DEST_PORT], 
+        textposition="top center", 
+        hoverinfo='text', name="Destination",
         customdata=[DEST_PORT] 
     ))
 
@@ -221,7 +224,7 @@ if not active_df.empty:
             cmin=min_vol, cmax=max_vol, showscale=True,
             colorbar=dict(
                 title=dict(text="Line Opacity = Order Volume", side="top", font=dict(color="white")),
-                thickness=15, len=0.4, x=0.5, y=-0.15, orientation='h',
+                thickness=10, len=0.6, x=0.5, y=-0.15, orientation='h', 
                 tickvals=[min_vol, max_vol], ticktext=[f"{min_vol} Orders", f"{max_vol} Orders"],
                 tickfont=dict(color="white"), outlinewidth=0
             )
@@ -230,14 +233,23 @@ if not active_df.empty:
     ))
 
     fig.update_layout(
-        height=650, plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
-        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[0, 6]),
+        height=650, 
+        plot_bgcolor='rgba(0,0,0,0)', 
+        paper_bgcolor='rgba(0,0,0,0)',
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False), 
         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-        margin=dict(l=50, r=220, t=50, b=100)
+        margin=dict(l=20, r=20, t=80, b=100), 
+        
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="center",
+            x=0.5,
+            font=dict(color="white")
+        )
     )
 
-
-    # Assign key="network_map" so Step 4 can read the click data from the session state!
     st.plotly_chart(fig, use_container_width=True, on_select="rerun", selection_mode="points", key="network_map")
 
     # 6. RAW DATA TABLE (Now perfectly synced!)
