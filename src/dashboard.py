@@ -86,7 +86,7 @@ display_df = active_df
 selected_node = None
 
 
-# check if the map has been clicked in the session state!
+# check if the map has been clicked in the session state
 if "network_map" in st.session_state:
     selection = st.session_state.network_map.get("selection", {})
     if selection and len(selection.get("points", [])) > 0:
@@ -128,8 +128,8 @@ if not active_df.empty:
     st.markdown("---")
 
 
-    # 5. ABSTRACT MULTI-ECHELON TOPOLOGY 
-    st.subheader("Global Routing Topology (3-Tier Echelon)")
+    # 3. ABSTRACT MULTI-ECHELON TOPOLOGY 
+    st.subheader("Global Routing Topology")
 
     lane_summary = active_df.groupby(['Assigned Plant', 'Origin Port']).size().reset_index(name='Order Volume')
     port_summary = lane_summary.groupby('Origin Port')['Order Volume'].sum().reset_index()
@@ -190,7 +190,7 @@ if not active_df.empty:
             hoverinfo='text', text=f"Leg 2: Ocean Freight from {o_name}<br>Consolidated Orders: {volume}", showlegend=False
         ))
 
-    # 3. DRAW THE NODES 
+    # 4. DRAW THE NODES 
     plant_colors = ['#e74c3c' if (p == struck_plant and "Strike" in scenario) else '#3498db' for p in plants]
     fig.add_trace(go.Scatter(
         x=[node_coords[p]["x"] for p in plants], y=[node_coords[p]["y"] for p in plants],
@@ -252,7 +252,7 @@ if not active_df.empty:
 
     st.plotly_chart(fig, use_container_width=True, on_select="rerun", selection_mode="points", key="network_map")
 
-    # 6. RAW DATA TABLE (Now perfectly synced!)
+    # 5. RAW DATA TABLE 
     with st.expander("View Raw Routing Data"):
         if selected_node and selected_node != DEST_PORT:
             st.write(f"Showing filtered data for: **{selected_node}**")
