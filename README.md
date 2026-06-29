@@ -1,30 +1,41 @@
 # Supply Chain Optimization and Risk Simulation
 **Automated MILP Routing and Stochastic Risk Simulation for Global Logistics**
+
 An end-to-end supply chain simulation that minimizes logistics costs while dynamically adapting to real-time network disruptions. This project utilizes Multi-Period Mixed-Integer Linear Programming (MILP) to provide prescriptive analytics—automatically recalculating optimal shipping routes when faced with simulated real-world risks like port closures, capacity drops, or fuel price hikes.
 > Live demo: **https://supply-chain-risk-optimization-engine.streamlit.app/**
 ---
 ## What you can do
-- **Simulate Logistical Disruptions**
-  Inject dynamic disruptions into the network to test resilience. Supported scenarios include 🟢 Baseline Routing, 🔴 Fuel Crises (+25% freight cost), 🟠 Port Closures, and 🟣 Plant Strikes (-80% manufacturing capacity).
-- **Visualize Multi-Echelon Topology**
+- **Simulate Logistical Disruptions**<br>
+  Inject dynamic disruptions into the network to test resilience. Supported scenarios include:
+  - Baseline Routing,
+  - Fuel Crises (+25% freight cost),
+  - Port Closures,
+  - Plant Strikes (-80% manufacturing capacity).
+  
+- **Visualize Multi-Echelon Topology**<br>
   View the entire global routing network through a custom 3-Tier abstract node-link graph, where line opacity dynamically represents order volume and bottleneck facilities turn red under stress.
-- **Drill-Down Facility Analytics**
+  
+- **Drill-Down Facility Analytics**<br>
   Click directly on specific manufacturing plants or origin ports within the UI to instantly filter the raw data tables and isolate specific order routing metrics and KPIs.
-- **Evaluate Global KPIs**
+  
+- **Evaluate Global KPIs**<br>
   Track the ripple effects of localized risks on macro metrics, including Total Global Cost, Orders Routed, Average Cost per Order, and Maximum Days to Fulfill.
 ---
 ## High‑level architecture
 **Offline pipeline (The Engine)**
+
 1. **ETL & Data Modeling** (`src/database_builder.py`)
    - Converts an excel file with multiple sheets to individual SQLite tables.
    - Extracts raw multi-table logistics data from SQLite.
    - Cleans and structures data into mathematical sets and parameters.
+
 2. **MILP Optimization** (`src/pyomo_solver.py`)
    - Builds a Multi-Period Mixed-Integer Linear Programming matrix.
    - Solves for the optimal order routing using the CPLEX solver while respecting strict factory capacities and port throughput constraints.
+
 3. **Risk Simulation** (`src/risk_simulator.py`, `src/main.py`)
    - Iterates through predefined disaster scenarios, recalculating the optimal routing paths and exporting the final dataframes to static CSVs.
-**Online app (The Control Tower)**
+     
 4. **Decoupled Visualization** (`src/dashboard.py`)
    - A lightweight Streamlit app that reads the pre-computed CSVs from the offline pipeline.
    - Requires zero heavy computation on the cloud server, ensuring lightning-fast load times and interaction rendering via Plotly.
