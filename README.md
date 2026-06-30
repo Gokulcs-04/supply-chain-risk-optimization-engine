@@ -3,6 +3,9 @@
 
 An end-to-end supply chain simulation that minimizes logistics costs while dynamically adapting to real-time network disruptions. This project utilizes Multi-Period Mixed-Integer Linear Programming (MILP) to provide prescriptive analytics—automatically recalculating optimal shipping routes when faced with simulated real-world risks like port closures, capacity drops, or fuel price hikes.
 > Live demo: **https://supply-chain-risk-optimization-engine.streamlit.app/**
+
+**Dataset**
+> Supply Chain Logistics Problem Dataset: **https://doi.org/10.17633/rd.brunel.7558679**
 ---
 ## What you can do
 - **Simulate Logistical Disruptions**<br>
@@ -118,14 +121,61 @@ Open the URL printed in the terminal (typically `http://localhost:8501`) to use 
 
 ## The Operations Research Architecture
 
-The mathematical backbone of this project is a Multi-Period MILP model aiming to minimize transportation costs, manufacturing co and fulfillment delay penalties.
+The mathematical model of this project is a Multi-Period MILP model aiming to minimize transportation costs, manufacturing co and fulfillment delay penalties. The model formulation is as follows:<br>
 
-**Objective Function:**
+**Sets and Indices**
+* $O$: Set of all orders in the system ($o \in O$)
+* $P$: Set of all available manufacturing plants ($p \in P$)
+* $W$: Set of all available origin shipping ports ($w \in W$)
+* $C$: Set of all shipping carriers ($c \in C$)
+* $D$: Set of all manufacturing days in the time horizon ($d \in D$)
 
-$$\text{Minimize } Z = \sum_{l \in L} \sum_{d \in D} \left( C_{l} + P_{d} \right) \cdot X_{l,d}$$
+**Parameters**
+* $Demand(o)$: Unit quantity required to fulfill order $o$
+* $Weight(o)$: Total shipping weight of order $o$
+* $Dest(o)$: Final destination port of order $o$
+* $WHCost(p)$: Processing cost per unit at manufacturing plant $p$
+* $Cap(p, d)$: Maximum unit capacity that plant $p$ can process on day $d$
+* $PortCap(w, d)$: Maximum unit throughput that origin port $w$ can handle on day $d$
+* $SCost(w, c, o)$: Freight cost to ship order $o$ from origin port $w$ to $Dest(o)$ using carrier $c$
+* $Penalty(d)$: Late fulfillment penalty incurred for processing an order on day $d$
 
-Where $X_{l,d}$ is the binary decision variable for routing an order on a specific lane and day.
+> **Data Engineering Preprocessing Rule:** > If the Service Level of an order $SL(o) = \text{'CRF'}$, the freight cost is pre-filtered to zero ($SCost(w, c, o) = 0$) in the Pandas pipeline prior to matrix generation. This avoids passing complex conditional logic directly to the MILP solver.
 
+**Decision Variable**
+A binary variable determining the exact route and timeline for every order in the network.
+
+$$X_{o,p,w,c,d} \in \{0, 1\}$$
+
+$X_{o,p,w,c,d} = 1$ if order $o$ is processed at plant $p$, shipped from origin port $w$, using carrier $c$, on day $d$. Otherwise, $0$.
+
+**Objective Function**
+
+*Minimize Total Network Cost*: The objective minimizes the sum of Warehouse Processing Costs, Freight Costs, and Delay Penalties.
+
+$$\text{Minimize } Z = \sum_{o \in O} \sum_{p \in P} \sum_{w \in W} \sum_{c \in C} \sum_{d \in D} \left( Demand(o) \cdot WHCost(p) + SCost(w, c, o) + Penalty(d) \right) \cdot X_{o,p,w,c,d}$$
+
+**Constraints**
+
+*1. Absolute Order Fulfillment*
+
+Every order in the system must be assigned exactly one valid routing configuration (plant, port, carrier, and day).
+
+$$\sum_{p \in P} \sum_{w \in W} \sum_{c \in C} \sum_{d \in D} X_{o,p,w,c,d} = 1 \quad \forall o \in O$$
+
+*2. Dynamic Plant Capacity* 
+
+The total units assigned to a specific plant on a specific day cannot exceed its operational limit for that day. 
+*(Note: During a simulated capacity reduction, $Cap(p,d)$ drops by 80%, forcing the solver to shift $X$ to alternative plants or push fulfillment to later days $d$).*
+
+$$\sum_{o \in O} \sum_{w \in W} \sum_{c \in C} Demand(o) \cdot X_{o,p,w,c,d} \le Cap(p, d) \quad \forall p \in P, \forall d \in D$$
+
+*3. Dynamic Port Throughput*
+
+The total units routed through a specific origin port on a specific day cannot exceed its maximum handling capacity. 
+*(Note: During a simulated closure, $PortCap(w,d) = 0$, forcing the network to bypass that node entirely).*
+
+$$\sum_{o \in O} \sum_{p \in P} \sum_{c \in C} Demand(o) \cdot X_{o,p,w,c,d} \le PortCap(w, d) \quad \forall w \in W, \forall d \in D$$
 ---
 
 ## Project structure
