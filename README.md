@@ -121,7 +121,7 @@ Open the URL printed in the terminal (typically `http://localhost:8501`) to use 
 
 ## The Operations Research Architecture
 
-The mathematical model of this project is a Multi-Period MILP model aiming to minimize transportation costs, manufacturing co and fulfillment delay penalties. The model formulation is as follows:<br>
+The mathematical model of this project is a Multi-Period MILP model aiming to minimize transportation costs, manufacturing costs and fulfillment delay penalties. The model formulation is as follows:<br>
 
 **Sets and Indices**
 * $O$: Set of all orders in the system ($o \in O$)
@@ -143,6 +143,7 @@ The mathematical model of this project is a Multi-Period MILP model aiming to mi
 > **Data Engineering Preprocessing Rule:** > If the Service Level of an order $SL(o) = \text{'CRF'}$, the freight cost is pre-filtered to zero ($SCost(w, c, o) = 0$) in the Pandas pipeline prior to matrix generation. This avoids passing complex conditional logic directly to the MILP solver.
 
 **Decision Variable**
+
 A binary variable determining the exact route and timeline for every order in the network.
 
 $$X_{o,p,w,c,d} \in \{0, 1\}$$
@@ -176,6 +177,16 @@ The total units routed through a specific origin port on a specific day cannot e
 *(Note: During a simulated closure, $PortCap(w,d) = 0$, forcing the network to bypass that node entirely).*
 
 $$\sum_{o \in O} \sum_{p \in P} \sum_{c \in C} Demand(o) \cdot X_{o,p,w,c,d} \le PortCap(w, d) \quad \forall w \in W, \forall d \in D$$
+
+**4. Matrix Reduction & Preprocessing Constraints**
+
+To minimize the dimensional complexity of the MILP model and improve solve times, several network constraints are enforced during the data preprocessing phase in `pyomo_solver.py`. By filtering the dataset before matrix instantiation, we eliminate invalid routing combinations (edges) from the solver's memory entirely:
+
+* Product-Plant Eligibility: Orders are strictly filtered to only allow routing through manufacturing plants equipped to produce that specific product.
+* Dedicated Fulfillment Allocation: High-priority or *Special* customers are hard-mapped to a restricted subset of dedicated plants.
+* Network Topology Connectivity: Invalid Plant-to-Port shipping lanes are dropped; plants are only permitted to route through their explicitly connected origin ports.
+* Carrier Weight Limits: If a carrier operates on a specific Lane ($W \rightarrow Dest$), the order is only permitted to use that carrier if its total physical weight of order falls within the carrier's allowable threshold.
+
 ---
 
 ## Project structure
