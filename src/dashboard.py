@@ -130,7 +130,7 @@ if not active_df.empty:
 
     # 3. ABSTRACT MULTI-ECHELON TOPOLOGY 
     st.subheader("Global Routing Topology")
-    st.info("**Interactive Analytics:** Click on any manufacturing plant or port on the network map below to isolate its routing data and recalculate these KPIs.")
+    st.info("**Note:** Click on any manufacturing plant or port on the network map below to isolate its routing data and recalculate the KPIs.")
 
     lane_summary = active_df.groupby(['Assigned Plant', 'Origin Port']).size().reset_index(name='Order Volume')
     port_summary = lane_summary.groupby('Origin Port')['Order Volume'].sum().reset_index()
